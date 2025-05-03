@@ -5,7 +5,7 @@ const io = require('socket.io')(http);
 const fs = require('fs');
 const path = require('path');
 
-const PORT = process.env.PORT || 3000; // Render erwartet process.env.PORT
+const PORT = process.env.PORT || 3000;
 const CHAT_LOG = path.join(__dirname, 'chatlog.json');
 
 app.use(express.static('public'));
@@ -17,7 +17,7 @@ app.get('/', (req, res) => {
 io.on('connection', (socket) => {
   console.log('Ein Benutzer ist verbunden');
 
-  // Sende bisherigen Chat
+  // Lade bisherigen Chat
   if (fs.existsSync(CHAT_LOG)) {
     const log = JSON.parse(fs.readFileSync(CHAT_LOG));
     socket.emit('chatlog', log);
@@ -35,8 +35,8 @@ io.on('connection', (socket) => {
   });
 });
 
+// <<< DIESE Klammer war zu viel oder falsch platziert! >>>
 http.listen(PORT, () => {
-  console.log(`🚀 Server läuft auf Port ${PORT}`);
+  console.log(`✅ Server läuft auf Port ${PORT}`);
 });
 
-});
