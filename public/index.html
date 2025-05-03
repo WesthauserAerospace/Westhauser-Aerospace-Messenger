@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ronny & Sylvia Messenger</title>
+  <style>
+    body { font-family: sans-serif; background: #1e1e1e; color: white; margin: 0; padding: 20px; }
+    ul { list-style-type: none; padding: 0; }
+    li { padding: 8px; margin: 4px 0; background: #333; border-radius: 5px; }
+    input, button { padding: 10px; border-radius: 5px; border: none; margin-top: 10px; }
+    input { width: 80%; }
+    button { background: #4caf50; color: white; }
+  </style>
+</head>
+<body>
+  <h2>Willkommen im privaten Messenger</h2>
+  <ul id="messages"></ul>
+  <input id="message" autocomplete="off" placeholder="Schreibe eine Nachricht..." />
+  <button onclick="sendMessage()">Senden</button>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
