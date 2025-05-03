@@ -4,11 +4,11 @@
     "description": "Messenger App mit Express und Socket.io",
     "main": "index.js",
     "scripts": {
-      "start": "node index.js"
+        "start": "node index.js"
     },
     "dependencies": {
-      "express": "^4.18.2",
-      "socket.io": "^4.7.2"
+        "express": "^4.18.2",
+        "express-basic-auth": "^1.2.1",
+        "socket.io": "^4.7.2"
     }
-  }
-  
+}
