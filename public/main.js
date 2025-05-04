@@ -9,8 +9,8 @@ let gptEnabled = true;
 
 // 🧠 Avatar-Auswahl (RAZION / HELIA-0)
 while (!currentUser) {
-  const name = prompt("Wer bist du? (RAZION, HELIA-0)").trim().toUpperCase();
-  if (["RAZION", "HELIA-0"].includes(name)) {
+  const name = prompt("Wer bist du? (RAZION, HEL-3)").trim().toUpperCase();
+  if (["RAZION", "HEL-3"].includes(name)) {
     currentUser = name;
   }
 }
