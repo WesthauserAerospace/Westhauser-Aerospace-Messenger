@@ -1,3 +1,5 @@
+require('dotenv').config(); // 🔐 Umgebungsvariablen laden (für GPT-4o etc.)
+
 const express = require('express');
 const basicAuth = require('express-basic-auth');
 const app = express();
@@ -9,7 +11,7 @@ const path = require('path');
 const PORT = process.env.PORT || 3000;
 const CHAT_LOG = path.join(__dirname, 'chatlog.json');
 
-// 🔐 HTTP Basic Auth – nur eingeloggte User dürfen rein
+// 🔐 HTTP Basic Auth – Zugang nur für autorisierte Nutzer
 app.use(basicAuth({
   users: {
     'ronny': 'geheim',
@@ -19,28 +21,29 @@ app.use(basicAuth({
   realm: 'Westhauser Aerospace Messenger'
 }));
 
-// 🌍 Statischer Ordner für HTML, JS etc.
+// 🌐 Statische Dateien (HTML, JS, CSS)
 app.use(express.static('public'));
 
-// 🏠 Hauptseite
+// 🏠 Startseite
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// 🔌 WebSocket-Logik
+// 🔌 WebSocket-Verbindung
 io.on('connection', (socket) => {
   console.log('✅ Ein Benutzer ist verbunden');
 
-  // Lade bisherigen Chat
+  // Lade alten Chatverlauf, wenn vorhanden
   if (fs.existsSync(CHAT_LOG)) {
     try {
       const log = JSON.parse(fs.readFileSync(CHAT_LOG, 'utf8'));
       socket.emit('chatlog', log);
     } catch (err) {
-      console.error('Fehler beim Laden des Chatlogs:', err);
+      console.error('⚠️ Fehler beim Laden des Chatlogs:', err);
     }
   }
 
+  // 📨 Neue Nachricht empfangen
   socket.on('chat message', (msg) => {
     io.emit('chat message', msg);
 
@@ -49,7 +52,7 @@ io.on('connection', (socket) => {
       try {
         log = JSON.parse(fs.readFileSync(CHAT_LOG, 'utf8'));
       } catch (err) {
-        console.error('Fehler beim Lesen des Chatlogs:', err);
+        console.error('⚠️ Fehler beim Lesen des Chatlogs:', err);
       }
     }
 
@@ -58,12 +61,12 @@ io.on('connection', (socket) => {
     try {
       fs.writeFileSync(CHAT_LOG, JSON.stringify(log, null, 2), 'utf8');
     } catch (err) {
-      console.error('Fehler beim Schreiben des Chatlogs:', err);
+      console.error('⚠️ Fehler beim Schreiben des Chatlogs:', err);
     }
   });
 });
 
-// 🚀 Server starten
+// 🛸 Serverstart
 http.listen(PORT, () => {
-  console.log(`✅ Server läuft auf Port ${PORT}`);
+  console.log(`🟢 Server läuft auf Port ${PORT}`);
 });

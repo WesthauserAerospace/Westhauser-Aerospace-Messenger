@@ -2,23 +2,101 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>Ronny & Sylvia Messenger</title>
+  <title>RAZION & HELIA-0 | Messenger</title>
   <style>
-    body { font-family: sans-serif; background: #1e1e1e; color: white; margin: 0; padding: 20px; }
-    ul { list-style-type: none; padding: 0; }
-    li { padding: 8px; margin: 4px 0; background: #333; border-radius: 5px; }
-    input, button { padding: 10px; border-radius: 5px; border: none; margin-top: 10px; }
-    input { width: 80%; }
-    button { background: #4caf50; color: white; }
+    body {
+      font-family: sans-serif;
+      background: #1e1e1e;
+      color: white;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+    }
+
+    /* Haupt-Chatbereich */
+    #chat-container {
+      flex: 3;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      padding: 8px;
+      margin: 4px 0;
+      background: #333;
+      border-radius: 5px;
+    }
+
+    input, button {
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      margin-top: 10px;
+    }
+
+    input {
+      width: 80%;
+    }
+
+    button {
+      background: #4caf50;
+      color: white;
+      cursor: pointer;
+    }
+
+    /* THOT-X News */
+    #news {
+      flex: 1;
+      background: #111;
+      border-left: 2px solid #333;
+      padding: 10px;
+      max-width: 300px;
+    }
+
+    #news strong {
+      color: #4caf50;
+    }
+
+    #admin-bar {
+      background: #111;
+      padding: 10px;
+      border-bottom: 2px solid #333;
+      margin-bottom: 10px;
+    }
+
+    #admin-bar button {
+      margin-left: 10px;
+    }
   </style>
 </head>
 <body>
-  <h2>Willkommen im privaten Messenger</h2>
-  <ul id="messages"></ul>
-  <input id="message" autocomplete="off" placeholder="Schreibe eine Nachricht..." />
-  <button onclick="sendMessage()">Senden</button>
+  <div id="chat-container">
+    <h2>Willkommen im privaten Messenger</h2>
+
+    <div id="admin-bar" style="display:none">
+      <strong style="color:#4caf50">RAZION – Systemkontrolle:</strong>
+      <button onclick="clearChat()">🧹 Chatlog löschen</button>
+      <button onclick="triggerDeepSearch()">🛰️ DeepSearch jetzt</button>
+      <button onclick="toggleGPT()">🤖 THOT-X an/aus</button>
+    </div>
+
+    <ul id="messages"></ul>
+    <input id="message" autocomplete="off" placeholder="Schreibe eine Nachricht..." />
+    <button onclick="sendMessage()">Senden</button>
+  </div>
+
+  <div id="news">
+    <strong>THOT-X Warnzentrale</strong><br>
+    <em>Lade aktuelle Daten...</em>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
+
