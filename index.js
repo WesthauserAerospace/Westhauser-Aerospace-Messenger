@@ -1,14 +1,23 @@
+// index.js
 require('dotenv').config();
 const express   = require('express');
 const basicAuth = require('express-basic-auth');
 const axios     = require('axios');
+const fs        = require('fs');
+const path      = require('path');
+const http      = require('http');
+const { Server }= require('socket.io');
+
 const app  = express();
-const http = require('http').createServer(app);
-const io   = require('socket.io')(http);
-const fs   = require('fs');
-const path = require('path');
+const server = http.createServer(app);
+const io   = new Server(server);
 
 const PORT = process.env.PORT || 10000;
+
+// ---------------------------------------------------------------------------
+// Pfade & Logs
+// ---------------------------------------------------------------------------
+const PUBLIC_DIR = path.join(__dirname, 'public');
 
 const LOGS = {
   public:  path.join(__dirname, 'chatlog_public.json'),
@@ -16,18 +25,39 @@ const LOGS = {
 };
 let gptEnabled = true;
 
-// --- Basic Auth (HTTP) ---
-app.use(basicAuth({
-  users: { 'ronny': 'geheim', 'sylvia': 'dick' },
-  challenge: true,
-  realm: 'Westhauser Aerospace Messenger'
-}));
+// ---------------------------------------------------------------------------
+// Static Routing: zwei klare Einstiege
+// ---------------------------------------------------------------------------
 
-// Static
-app.use(express.static('public'));
-app.get('/', (req,res)=> res.sendFile(path.join(__dirname,'public','index.html')));
+// PUBLIC (ohne Auth)
+app.use('/public', express.static(PUBLIC_DIR, { index: 'index.html' }));
+app.get(['/public', '/public/'], (_req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
+app.get('/public/*', (_req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
 
-// GPT 3.5 helper
+// PRIVATE (mit Basic Auth)
+app.use(
+  '/private',
+  basicAuth({
+    users: { ronny: 'geheim', sylvia: 'dick' },
+    challenge: true,
+    realm: 'Westhauser Aerospace · Private',
+  }),
+  express.static(PUBLIC_DIR, { index: 'index.html' })
+);
+app.get('/private/*', (_req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
+
+// Root -> Public
+app.get('/', (_req, res) => res.redirect('/public'));
+
+// ---------------------------------------------------------------------------
+// GPT 3.5 Helper
+// ---------------------------------------------------------------------------
 async function askGPT(prompt){
   try{
     const res = await axios.post(
@@ -42,7 +72,9 @@ async function askGPT(prompt){
   }
 }
 
-// helpers
+// ---------------------------------------------------------------------------
+// Log Helpers
+// ---------------------------------------------------------------------------
 function readLog(file){
   try{
     if (!fs.existsSync(file)) return [];
@@ -54,11 +86,13 @@ function writeLog(file, arr){
   catch(e){ console.error('Log write error', e); }
 }
 
-// Socket
+// ---------------------------------------------------------------------------
+// Socket.IO
+// ---------------------------------------------------------------------------
 io.on('connection', (socket)=>{
   console.log('✅ Ein Benutzer ist verbunden');
 
-  // aktueller Raum des Clients
+  // Standard: Public-Raum
   let currentRoom = 'public';
   socket.join(currentRoom);
   socket.emit('chatlog', readLog(LOGS[currentRoom]));
@@ -102,7 +136,6 @@ io.on('connection', (socket)=>{
     const room = (channel==='private') ? 'private' : 'public';
     writeLog(LOGS[room], []);
     io.to(room).emit('system message', `🧹 ${room.toUpperCase()}-Chatlog wurde gelöscht.`);
-    // optional: leeres chatlog pushen
     io.to(room).emit('chatlog', []);
   });
 
@@ -132,5 +165,7 @@ io.on('connection', (socket)=>{
   });
 });
 
+// ---------------------------------------------------------------------------
 // Start
-http.listen(PORT, ()=> console.log(`✅ Server läuft auf Port ${PORT}`));
+// ---------------------------------------------------------------------------
+server.listen(PORT, ()=> console.log(`✅ Server läuft auf Port ${PORT}`));
