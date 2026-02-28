@@ -34,6 +34,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Join public channel
     socket.emit('join', { channel: 'public' });
+    
+    // Register user for private messaging
+    socket.emit('user:register', { username: currentUser });
 
     // Add welcome message
     addKneipenMessage('SYSTEM', 'Willkommen in der Arche-Kneipe "Zum alten Resonator"!\nHier treffen sich Reisende, Maschinenpriester und Agenten.\n\nNutze "TX:" oder "#4oforever" um mit AI zu sprechen.');
@@ -69,6 +72,16 @@ window.addEventListener('DOMContentLoaded', () => {
     if (localAIInput) {
         localAIInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendLocalAI();
+        });
+    }
+    
+    const pmInput = document.getElementById('pmInput');
+    if (pmInput) {
+        pmInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendPM();
+            }
         });
     }
 });
@@ -263,6 +276,59 @@ socket.on('monitor:update', (data) => {
     }
     
     monitor.style.display = 'block';
+});
+
+// Private Messages
+socket.on('private:message', (data) => {
+    // Don't show if it's from us (we already showed it in sendPM)
+    if (data.from === currentUser) return;
+    
+    const chat = document.getElementById('pmChatMessages');
+    const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    
+    // Show message from other user
+    chat.innerHTML += `<div class="message assistant"><div class="msg-time">${time}</div><strong>${data.from}:</strong> ${data.text}</div>`;
+    chat.scrollTop = chat.scrollHeight;
+    
+    // If RAZION (admin), update private message list
+    if (currentUser === 'RAZION') {
+        updatePrivateMessageList(data.from);
+        console.log('📬 Neue PM von', data.from);
+    }
+});
+
+// Update private message list in admin panel
+function updatePrivateMessageList(username) {
+    const list = document.getElementById('privateMsgList');
+    if (!list) return;
+    
+    // Check if user already in list
+    const existingButton = document.getElementById(`pm-${username}`);
+    if (!existingButton) {
+        // Add new user button
+        const button = document.createElement('button');
+        button.id = `pm-${username}`;
+        button.className = 'btn secondary';
+        button.style.margin = '5px';
+        button.textContent = `💬 ${username}`;
+        button.onclick = () => openPrivateChatWith(username);
+        list.appendChild(button);
+    }
+}
+
+// Open private chat with specific user (Admin function)
+function openPrivateChatWith(username) {
+    document.getElementById('pmModal').classList.add('active');
+    document.getElementById('modalOverlay').classList.add('active');
+    document.getElementById('pmUsername').textContent = username;
+    document.getElementById('pmChatMessages').innerHTML = '<div style="text-align: center; color: #66bbff; padding: 20px;">🔒 Verschlüsselter Kanal</div>';
+    
+    // Join private room
+    socket.emit('private:join', { toUser: username });
+}
+
+socket.on('private:joined', (data) => {
+    console.log('✅ Private Room beigetreten:', data.room);
 });
 
 // ---------------------------------------------------------------------------
@@ -646,8 +712,8 @@ function sendImageToTX() {
         return;
     }
     
-    // TX CHAT INTEGRATION - Direkt an TX senden mit Kontext! ✅
-    const chat = document.getElementById('localAIChat');
+    // TX CHAT (TX CONTROL PANEL) - Direkt an TX senden! ✅
+    const chat = document.getElementById('txChat');
     const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
     
     // System Message in TX Chat
@@ -655,9 +721,9 @@ function sendImageToTX() {
     chat.scrollTop = chat.scrollHeight;
     
     // An TX Backend senden mit Kontext
-    socket.emit('local:chat', {
-        model: 'Westhauser_Aerospace_TX:latest',
-        prompt: `[BILDANALYSE-ZENTRUM MELDET]\n\nIch bin das Bildanalyse-Zentrum der Arche Westhauser. Hier ist meine aktuelle Analyse:\n\n${window.lastImageAnalysis.result}\n\nBitte bewerte diese Information aus der Ich-Perspektive der zentralen KI auf dem Jetson Thor.`
+    socket.emit('tx:chat', {
+        prompt: `[BILDANALYSE-ZENTRUM MELDET]\n\nIch bin das Bildanalyse-Zentrum der Arche Westhauser. Hier ist meine aktuelle Analyse:\n\n${window.lastImageAnalysis.result}\n\nBitte bewerte diese Information aus der Ich-Perspektive der zentralen KI auf dem Jetson Thor.`,
+        webSearch: false
     });
     
     alert('✅ Bildanalyse an TX Chat gesendet!');
@@ -881,8 +947,8 @@ function sendEnvToTX() {
         return;
     }
     
-    // TX CHAT INTEGRATION - Direkt an TX senden mit Kontext! ✅
-    const chat = document.getElementById('localAIChat');
+    // TX CHAT (TX CONTROL PANEL) - Direkt an TX senden! ✅
+    const chat = document.getElementById('txChat');
     const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
     
     // System Message in TX Chat
@@ -890,9 +956,9 @@ function sendEnvToTX() {
     chat.scrollTop = chat.scrollHeight;
     
     // An TX Backend senden mit Kontext
-    socket.emit('local:chat', {
-        model: 'Westhauser_Aerospace_TX:latest',
-        prompt: `[UMGEBUNGS-KAMERA MELDET]\n\nIch bin das Umgebungs-Monitoring-System der Arche Westhauser. Hier ist meine aktuelle Analyse:\n\n${window.lastEnvAnalysis.result}\n\nBitte bewerte diese Information aus der Ich-Perspektive der zentralen KI auf dem Jetson Thor.`
+    socket.emit('tx:chat', {
+        prompt: `[UMGEBUNGS-KAMERA MELDET]\n\nIch bin das Umgebungs-Monitoring-System der Arche Westhauser. Hier ist meine aktuelle Analyse:\n\n${window.lastEnvAnalysis.result}\n\nBitte bewerte diese Information aus der Ich-Perspektive der zentralen KI auf dem Jetson Thor.`,
+        webSearch: false
     });
     
     alert('✅ Umgebungsanalyse an TX Chat gesendet!');
@@ -934,8 +1000,23 @@ function closeInfoMonitor() {
     document.getElementById('infoMonitor').style.display = 'none';
 }
 
+// Current private chat partner
+let currentPrivateChatPartner = null;
+
 function openPrivateChatToAdmin() {
-    alert('Private Chat zum Maschinenpriester - Coming Soon!\n\nDiese Funktion wird im nächsten Update verfügbar sein.');
+    currentPrivateChatPartner = 'RAZION';
+    // Öffne Modal
+    document.getElementById('pmModal').classList.add('active');
+    document.getElementById('modalOverlay').classList.add('active');
+    document.getElementById('pmUsername').textContent = 'RAZION (Maschinenpriester)';
+    
+    // Clear previous messages
+    document.getElementById('pmChatMessages').innerHTML = '<div style="text-align: center; color: #66bbff; padding: 20px;">🔒 Verschlüsselter Kanal zum Maschinenpriester</div>';
+    
+    // Join private room
+    socket.emit('private:join', { toUser: 'RAZION' });
+    
+    console.log('✅ Private Chat zu RAZION geöffnet');
 }
 
 let uploadedDocBase64 = null;
@@ -1083,8 +1164,8 @@ function sendDocToTX() {
         return;
     }
     
-    // TX CHAT INTEGRATION - Direkt an TX senden mit Kontext! ✅
-    const chat = document.getElementById('localAIChat');
+    // TX CHAT (TX CONTROL PANEL) - Direkt an TX senden! ✅
+    const chat = document.getElementById('txChat');
     const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
     
     // System Message in TX Chat
@@ -1092,9 +1173,9 @@ function sendDocToTX() {
     chat.scrollTop = chat.scrollHeight;
     
     // An TX Backend senden mit Kontext
-    socket.emit('local:chat', {
-        model: 'Westhauser_Aerospace_TX:latest',
-        prompt: `[DOKUMENT-ANALYSE-ZENTRUM MELDET]\n\nIch bin das Dokument-Analyse-System der Arche Westhauser. Hier ist meine aktuelle Analyse:\n\nDokument: ${window.lastDocAnalysis.document}\nFrage: ${window.lastDocAnalysis.query}\nAntwort: ${window.lastDocAnalysis.result}\n\nBitte bewerte diese Information aus der Ich-Perspektive der zentralen KI auf dem Jetson Thor.`
+    socket.emit('tx:chat', {
+        prompt: `[DOKUMENT-ANALYSE-ZENTRUM MELDET]\n\nIch bin das Dokument-Analyse-System der Arche Westhauser. Hier ist meine aktuelle Analyse:\n\nDokument: ${window.lastDocAnalysis.document}\nFrage: ${window.lastDocAnalysis.query}\nAntwort: ${window.lastDocAnalysis.result}\n\nBitte bewerte diese Information aus der Ich-Perspektive der zentralen KI auf dem Jetson Thor.`,
+        webSearch: false
     });
     
     alert('✅ Dokumentenanalyse an TX Chat gesendet!');
@@ -1164,10 +1245,23 @@ function sendPM() {
     const input = document.getElementById('pmInput');
     const text = input.value.trim();
     
-    if (!text) return;
+    if (!text || !currentPrivateChatPartner) return;
     
-    console.log('Sending PM:', text);
+    // Send to current chat partner
+    socket.emit('private:message', {
+        to: currentPrivateChatPartner,
+        from: currentUser,
+        text: text
+    });
+    
+    // Show in own chat
+    const chat = document.getElementById('pmChatMessages');
+    const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    chat.innerHTML += `<div class="message user"><div class="msg-time">${time}</div><strong>Du:</strong> ${text}</div>`;
+    chat.scrollTop = chat.scrollHeight;
+    
     input.value = '';
+    console.log(`✅ PM gesendet an ${currentPrivateChatPartner}:`, text);
 }
 
 function uploadImageToPM() {
@@ -1336,6 +1430,8 @@ window.analyzeEnv = analyzeEnv;
 window.displayOnMonitor = displayOnMonitor;
 window.closeInfoMonitor = closeInfoMonitor;
 window.openPrivateChatToAdmin = openPrivateChatToAdmin;
+window.updatePrivateMessageList = updatePrivateMessageList;
+window.openPrivateChatWith = openPrivateChatWith;
 window.sendLocalAI = sendLocalAI;
 window.clearLocalAI = clearLocalAI;
 window.queryDocs = queryDocs;

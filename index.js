@@ -184,6 +184,9 @@ const DRINKS = {
 // ---------------------------------------------------------------------------
 // Socket.IO
 // ---------------------------------------------------------------------------
+// User-Socket mapping for private messages
+const userSockets = new Map();
+
 io.on('connection', (socket) => {
   console.log('✅ User connected:', socket.id);
 
@@ -212,6 +215,13 @@ io.on('connection', (socket) => {
     const room = channel === 'private' ? 'private' : 'public';
     socket.join(room);
     socket.emit('chatlog', readLog(LOGS[room]));
+  });
+
+  // Register user for private messaging
+  socket.on('user:register', ({ username }) => {
+    userSockets.set(username, socket.id);
+    socket.username = username;
+    console.log(`✅ User registered: ${username} (${socket.id})`);
   });
 
   // Chat message
@@ -628,8 +638,48 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Private Messages System
+  socket.on('private:join', (data) => {
+    const { toUser } = data;
+    console.log(`✅ User joining private chat with ${toUser}`);
+    socket.emit('private:joined', { toUser });
+  });
+
+  socket.on('private:message', (data) => {
+    const { to, from, text } = data;
+    
+    // Find socket ID of recipient
+    const toSocketId = userSockets.get(to);
+    
+    if (toSocketId) {
+      // Send to recipient
+      io.to(toSocketId).emit('private:message', {
+        from: from,
+        to: to,
+        text: text,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Also send to sender (for confirmation)
+    socket.emit('private:message', {
+      from: from,
+      to: to,
+      text: text,
+      timestamp: new Date().toISOString()
+    });
+    
+    console.log(`💬 Private message: ${from} → ${to}`);
+  });
+
   socket.on('disconnect', () => {
-    console.log('❌ User disconnected:', socket.id);
+    // Remove user from mapping
+    if (socket.username) {
+      userSockets.delete(socket.username);
+      console.log(`❌ User disconnected: ${socket.username} (${socket.id})`);
+    } else {
+      console.log('❌ User disconnected:', socket.id);
+    }
   });
 });
 
