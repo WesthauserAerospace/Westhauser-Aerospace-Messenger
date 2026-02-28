@@ -76,7 +76,7 @@ window.addEventListener('DOMContentLoaded', () => {
 // ========================================
 // LEAFLET MAP
 // ========================================
-let OLLAMA_URL = 'http://localhost:11434';  // Dynamic for Cloudflare support
+const OLLAMA_URL = 'http://localhost:11434';
 let map = null;
 
 function initializeMap() {
@@ -646,21 +646,12 @@ function sendImageToTX() {
         return;
     }
     
-    // TX CHAT INTEGRATION - Direkt an TX senden mit Kontext! ✅
-    const chat = document.getElementById('localAIChat');
+    const txBriefing = document.getElementById('txBriefing');
     const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    txBriefing.innerHTML += `<div class="briefing-entry"><div class="briefing-timestamp">${time}</div><strong>📸 ${window.lastImageAnalysis.type}:</strong><br>${window.lastImageAnalysis.result}</div>`;
+    txBriefing.scrollTop = txBriefing.scrollHeight;
     
-    // System Message in TX Chat
-    chat.innerHTML += `<div class="message system"><strong>[📸 BILDANALYSE-ZENTRUM]</strong><br>${window.lastImageAnalysis.result}</div>`;
-    chat.scrollTop = chat.scrollHeight;
-    
-    // An TX Backend senden mit Kontext
-    socket.emit('local:chat', {
-        model: 'Westhauser_Aerospace_TX:latest',
-        prompt: `[BILDANALYSE-ZENTRUM MELDET]\n\nIch bin das Bildanalyse-Zentrum der Arche Westhauser. Hier ist meine aktuelle Analyse:\n\n${window.lastImageAnalysis.result}\n\nBitte bewerte diese Information aus der Ich-Perspektive der zentralen KI auf dem Jetson Thor.`
-    });
-    
-    alert('✅ Bildanalyse an TX Chat gesendet!');
+    alert('✅ Bildanalyse an TX gesendet!');
 }
 
 function resetImageMonitor() {
@@ -881,21 +872,12 @@ function sendEnvToTX() {
         return;
     }
     
-    // TX CHAT INTEGRATION - Direkt an TX senden mit Kontext! ✅
-    const chat = document.getElementById('localAIChat');
+    const txBriefing = document.getElementById('txBriefing');
     const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    txBriefing.innerHTML += `<div class="briefing-entry"><div class="briefing-timestamp">${time}</div><strong>📹 ${window.lastEnvAnalysis.type}:</strong><br>${window.lastEnvAnalysis.result}</div>`;
+    txBriefing.scrollTop = txBriefing.scrollHeight;
     
-    // System Message in TX Chat
-    chat.innerHTML += `<div class="message system"><strong>[📹 UMGEBUNGS-KAMERA]</strong><br>${window.lastEnvAnalysis.result}</div>`;
-    chat.scrollTop = chat.scrollHeight;
-    
-    // An TX Backend senden mit Kontext
-    socket.emit('local:chat', {
-        model: 'Westhauser_Aerospace_TX:latest',
-        prompt: `[UMGEBUNGS-KAMERA MELDET]\n\nIch bin das Umgebungs-Monitoring-System der Arche Westhauser. Hier ist meine aktuelle Analyse:\n\n${window.lastEnvAnalysis.result}\n\nBitte bewerte diese Information aus der Ich-Perspektive der zentralen KI auf dem Jetson Thor.`
-    });
-    
-    alert('✅ Umgebungsanalyse an TX Chat gesendet!');
+    alert('✅ Umgebungsanalyse an TX gesendet!');
 }
 
 function resetEnvMonitor() {
@@ -1083,21 +1065,12 @@ function sendDocToTX() {
         return;
     }
     
-    // TX CHAT INTEGRATION - Direkt an TX senden mit Kontext! ✅
-    const chat = document.getElementById('localAIChat');
+    const txBriefing = document.getElementById('txBriefing');
     const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    txBriefing.innerHTML += `<div class="briefing-entry"><div class="briefing-timestamp">${time}</div><strong>📄 ${window.lastDocAnalysis.type} (${window.lastDocAnalysis.document}):</strong><br>Frage: ${window.lastDocAnalysis.query}<br>Antwort: ${window.lastDocAnalysis.result}</div>`;
+    txBriefing.scrollTop = txBriefing.scrollHeight;
     
-    // System Message in TX Chat
-    chat.innerHTML += `<div class="message system"><strong>[📄 DOKUMENT-ANALYSE]</strong><br>Dokument: ${window.lastDocAnalysis.document}<br>Frage: ${window.lastDocAnalysis.query}<br>Antwort: ${window.lastDocAnalysis.result}</div>`;
-    chat.scrollTop = chat.scrollHeight;
-    
-    // An TX Backend senden mit Kontext
-    socket.emit('local:chat', {
-        model: 'Westhauser_Aerospace_TX:latest',
-        prompt: `[DOKUMENT-ANALYSE-ZENTRUM MELDET]\n\nIch bin das Dokument-Analyse-System der Arche Westhauser. Hier ist meine aktuelle Analyse:\n\nDokument: ${window.lastDocAnalysis.document}\nFrage: ${window.lastDocAnalysis.query}\nAntwort: ${window.lastDocAnalysis.result}\n\nBitte bewerte diese Information aus der Ich-Perspektive der zentralen KI auf dem Jetson Thor.`
-    });
-    
-    alert('✅ Dokumentenanalyse an TX Chat gesendet!');
+    alert('✅ Dokumentenanalyse an TX gesendet!');
 }
 
 function sendDocChat() {
@@ -1243,16 +1216,11 @@ function activateCloudflare() {
         return;
     }
     
-    // SET OLLAMA_URL FOR VISION MODULES! ✅
-    OLLAMA_URL = url;
-    console.log('✅ Vision Modules nutzen jetzt:', OLLAMA_URL);
-    
     socket.emit('admin:set_cloudflare', { url });
     
     document.getElementById('cloudflareStatus').textContent = 'Active';
     document.getElementById('cloudflareStatus').classList.remove('inactive');
     
-    alert(`✅ Cloudflare aktiviert!\n\nVision Module nutzen jetzt:\n${url}`);
     console.log('✅ Cloudflare URL aktiviert:', url);
 }
 
