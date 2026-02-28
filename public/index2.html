@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Westhauser Aerospace — RAZION · HEL-3 · THOT-X</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-logo">WA</span>
+      <div class="brand-text">
+        <div class="brand-title">Westhauser Aerospace</div>
+        <div class="brand-sub">NEURAL CORE · Private Link</div>
+      </div>
+    </div>
+    <div class="presence">
+      <span class="pill pill-razion">RAZION</span>
+      <span class="pill pill-hel3">HEL-3</span>
+      <span class="pill pill-thotx">THOT-X</span>
+    </div>
+  </header>
+
+  <!-- CHANNEL TABS -->
+  <nav class="tabs">
+    <button id="tab-public"  class="tab active" onclick="switchChannel('public')">🌐 Public</button>
+    <button id="tab-private" class="tab"        onclick="switchChannel('private')">🔒 Privat (RAZION & HEL-3)</button>
+  </nav>
+
+  <!-- APP LAYOUT -->
+  <div class="app-wrap">
+    <!-- CHAT -->
+    <section class="chat-col">
+      <div id="admin-bar" class="admin-bar" style="display: none;">
+        <span class="admin-title">RAZION · Systemkontrolle</span>
+        <div class="admin-actions">
+          <button class="btn" onclick="clearChat()">🧹 Chatlog löschen</button>
+          <button class="btn" onclick="triggerDeepSearch()">🛰️ DeepSearch jetzt</button>
+          <button class="btn" onclick="toggleGPT()">🤖 THOT-X an/aus</button>
+        </div>
+      </div>
+
+      <ul id="messages" class="messages"></ul>
+
+      <div class="composer">
+        <input id="message" class="input" autocomplete="off"
+               placeholder="Schreibe eine Nachricht … (Tipp: THOT-X: Frage …)" />
+        <button class="btn send" onclick="sendMessage()">Senden</button>
+      </div>
+    </section>
+
+    <!-- THOT-X SIDEBAR -->
+    <aside class="news-col">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="dot dot-thotx"></span>
+          <span class="panel-title">THOT-X · Warnzentrale</span>
+        </div>
+        <div id="news" class="panel-body">
+          <em>Lade aktuelle Daten …</em>
+        </div>
+      </div>
+
+      <div class="panel panel-hint">
+        <div class="panel-head">
+          <span class="dot"></span>
+          <span class="panel-title">Hinweise</span>
+        </div>
+        <div class="panel-body small">
+          <p><strong>Avatare wählen:</strong> Beim Laden: <code>RAZION</code> oder <code>HEL-3</code>.</p>
+          <p><strong>THOT-X fragen:</strong> <code>THOT-X: …</code> schreiben (antwortet, wenn GPT aktiv ist).</p>
+          <p><strong>Channel:</strong> Tabs oben schalten zwischen <em>Public</em> und <em>Privat</em> (eigenes Log).</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
+

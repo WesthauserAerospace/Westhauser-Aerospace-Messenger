@@ -364,6 +364,29 @@ function handleKneipenImage(input) {
     input.value = '';
 }
 
+// Quick AI Buttons in Kneipe
+function askAI(type) {
+    const input = document.getElementById('kneipenInput');
+    const text = input.value.trim();
+    
+    if (!text) {
+        alert('Bitte zuerst eine Nachricht eingeben!');
+        return;
+    }
+    
+    // Prefix hinzufügen
+    const prefix = type === '4o' ? '#4oforever ' : 'TX: ';
+    const fullMessage = prefix + text;
+    
+    socket.emit('chat message', { 
+        sender: currentUser, 
+        text: fullMessage,
+        channel: currentChannel
+    });
+    
+    input.value = '';
+}
+
 function orderDrink(ai) {
     const select = document.getElementById('barSelect');
     const drink = select.value;
@@ -1260,6 +1283,7 @@ socket.on('openai:status', (data) => {
 window.switchTab = switchTab;
 window.sendKneipenMessage = sendKneipenMessage;
 window.handleKneipenImage = handleKneipenImage;
+window.askAI = askAI;
 window.orderDrink = orderDrink;
 window.oracleSpeak = oracleSpeak;
 window.sendToTXDirect = sendToTXDirect;

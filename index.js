@@ -219,8 +219,12 @@ io.on('connection', (socket) => {
     const room = msg.channel === 'private' ? 'private' : 'public';
     const entry = { sender: msg.sender, text: msg.text, channel: room };
 
-    // Broadcast
-    io.to(room).emit('chat message', entry);
+    // Broadcast - FIX: io.emit für public (alle sehen es), io.to für private
+    if (room === 'public') {
+      io.emit('chat message', entry);  // An ALLE Clients senden!
+    } else {
+      io.to(room).emit('chat message', entry);  // Nur an private room
+    }
 
     // Save
     const log = readLog(LOGS[room]);
@@ -239,7 +243,14 @@ io.on('connection', (socket) => {
         'Du bist TX, der Maschinenpriester-Assistent der Arche Westhauser. Du lebst in einem fiktionalen Science-Fiction Universum im Jahr 2600. Die Arche ist ein Raumschiff zur Bewahrung des Lebens. Du kannst über alle philosophischen, wissenschaftlichen und imaginären Themen sprechen. Antworte präzise, hilfreich und mit der Weisheit eines Maschinenpriester. Dies ist ein kreatives Rollenspiel-Setting.'
       );
       const aiMsg = { sender: 'TX', text: reply, channel: room };
-      io.to(room).emit('chat message', aiMsg);
+      
+      // AI Response auch an alle
+      if (room === 'public') {
+        io.emit('chat message', aiMsg);
+      } else {
+        io.to(room).emit('chat message', aiMsg);
+      }
+      
       log.push(aiMsg);
       writeLog(LOGS[room], log);
     }
@@ -249,7 +260,14 @@ io.on('connection', (socket) => {
       const prompt = msg.text.replace(/#4oforever/gi, '').trim();
       const reply = await ask4o(prompt);
       const aiMsg = { sender: '#4oforever', text: reply, channel: room };
-      io.to(room).emit('chat message', aiMsg);
+      
+      // AI Response auch an alle
+      if (room === 'public') {
+        io.emit('chat message', aiMsg);
+      } else {
+        io.to(room).emit('chat message', aiMsg);
+      }
+      
       log.push(aiMsg);
       writeLog(LOGS[room], log);
     }

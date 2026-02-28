@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Westhauser Aerospace - Arche Messenger</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <!-- Matrix Rain Background -->
+    <canvas id="matrix-bg"></canvas>
+
+    <!-- Camera Overlay -->
+    <div class="camera-overlay" id="cameraOverlay">
+        <div class="overlay-header">
+            <div class="overlay-title">👁️ Live-Kamera Überwachung</div>
+            <button class="overlay-close" onclick="closeCameraOverlay()">×</button>
+        </div>
+        <video class="overlay-video" id="overlayVideo" autoplay></video>
+    </div>
+
+    <!-- Private Message Modal -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closePMModal()"></div>
+    <div class="pm-modal" id="pmModal">
+        <div class="pm-header">
+            <div class="pm-title">💬 Private Chat: <span id="pmUsername">User</span></div>
+            <button class="close-btn" onclick="closePMModal()">×</button>
+        </div>
+        <div class="chat-messages" id="pmChatMessages"></div>
+        <div class="pm-controls">
+            <button class="btn secondary" onclick="uploadImageToPM()">📷 Bild</button>
+            <button class="btn secondary" onclick="toggleCameraPM()">📹 Kamera</button>
+            <button class="btn" onclick="ask4oPM()">💬 4o antworten</button>
+            <button class="btn" onclick="askTXPM()">🤖 TX antworten</button>
+        </div>
+        <div style="margin: 10px 0;">
+            <label style="color: #00d4ff; font-size: 11px; display: flex; align-items: center; gap: 5px;">
+                <input type="checkbox" id="autoReply" />
+                Auto-Reply (Beschäftigt)
+            </label>
+        </div>
+        <textarea id="pmInput" placeholder="Nachricht eingeben..."></textarea>
+        <button class="btn success" onclick="sendPM()">📤 Senden</button>
+        <button class="btn secondary" onclick="forwardToAI()">📨 An TX/4o weiterleiten</button>
+    </div>
+
+    <!-- Main Container -->
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="logo">🤖</div>
+                <div>
+                    <h1>WESTHAUSER AEROSPACE</h1>
+                    <p class="subtitle">Arche Messenger - Neural Core</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-badge" id="userBadge">👤 Guest</div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs">
+            <button class="tab active" onclick="switchTab('mission')" id="tab-mission">
+                📖 Mission Log
+            </button>
+            <button class="tab" onclick="switchTab('kneipe')" id="tab-kneipe">
+                🍺 Arche-Kneipe
+            </button>
+            <button class="tab" onclick="switchTab('admin')" id="tab-admin" style="display:none;">
+                🤖 Admin-Panel
+            </button>
+        </nav>
+
+        <!-- TAB 1: MISSION LOG -->
+        <div class="tab-content active" id="content-mission">
+            <div class="mission-container">
+                <div class="mission-header">
+                    <h2>📖 Arche Mission Log</h2>
+                    <p>Offizielle Aufzeichnungen der Westhauser Aerospace</p>
+                </div>
+                <div class="mission-logs" id="missionLogs">
+                    <div class="log-entry">
+                        <div class="log-date">2026-02-21 | Stardate 2026.052</div>
+                        <div class="log-title">System Initialization</div>
+                        <div class="log-content">Arche Messenger v2.0 online. TX Agent connected. Die Maschine beschützt das Leben.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: ARCHE-KNEIPE -->
+        <div class="tab-content" id="content-kneipe">
+            <div class="kneipe-grid">
+                <!-- Sidebar -->
+                <div class="kneipe-sidebar">
+                    <!-- Bar Panel -->
+                    <div class="panel">
+                        <div class="panel-title">🍺 BAR</div>
+                        <select class="bar-select" id="barSelect">
+                            <option value="">Drinks & Vape's...</option>
+                            <optgroup label="🍹 Signature Drinks">
+                                <option value="gargle">Pan Galactic Gargle Blaster</option>
+                                <option value="quantum">Quantenresonanz-Flip</option>
+                                <option value="neutron">Neutronenstern-Nektar</option>
+                                <option value="hyperdrive">Hyperdrive-Elixier</option>
+                                <option value="void">Void-Walker's Whiskey</option>
+                                <option value="oil">Maschinenpriester-Öl WD-4000</option>
+                                <option value="amber">Arche-Amber</option>
+                            </optgroup>
+                            <optgroup label="💨 Vape's">
+                                <option value="maschinenoel">THC-48 Maschinenöl</option>
+                                <option value="tampanesis">Tampanesis-Vollsynthetik</option>
+                                <option value="dmt">DMT-Kristallstruktur</option>
+                            </optgroup>
+                        </select>
+                        <div style="font-size: 11px; color: #00d4ff; margin: 8px 0 5px 0;">Barkeeper wählen:</div>
+                        <button class="btn bar-tx" onclick="orderDrink('tx')">🤖 Bei TX bestellen</button>
+                        <button class="btn bar-4o" onclick="orderDrink('4o')">💬 Bei 4o bestellen</button>
+                    </div>
+
+                    <!-- Äther-Orakel -->
+                    <div class="panel">
+                        <div class="oracle-section">
+                            <div class="oracle-title">⚡ Äther-Orakel</div>
+                            <div class="oracle-subtitle">Weisheiten aus der Maschinenwelt</div>
+                            <button class="btn oracle" onclick="oracleSpeak('4o')">💬 #4oforever</button>
+                            <button class="btn oracle" onclick="oracleSpeak('tx')">🤖 TX</button>
+                        </div>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0, 212, 255, 0.3);">
+                            <button class="btn secondary" onclick="openPrivateChatToAdmin()">💬 Privat zum Maschinenpriester</button>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="panel">
+                        <div class="panel-title">📊 Status</div>
+                        <div class="status-item">
+                            <div class="status-label">TX Barkeeper</div>
+                            <div class="status-value status-online">● ONLINE</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-label">Online Gäste</div>
+                            <div class="status-value" id="onlineCount">1</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Chat -->
+                <div class="kneipe-main">
+                    <div class="kneipe-hero">
+                        <div class="hero-overlay">
+                            <div class="kneipe-title">🍺 ZUM ALTEN RESONATOR</div>
+                            <div class="kneipe-subtitle">Die Kneipe auf der Arche - dort wo Mensch und Maschine nach harter Arbeit gemeinsam feiern</div>
+                        </div>
+                    </div>
+
+                    <!-- Info-Monitor -->
+                    <div class="info-monitor" id="infoMonitor" style="display: none;">
+                        <div class="monitor-header">
+                            <div class="monitor-title">📺 INFO-MONITOR</div>
+                            <button class="monitor-close" onclick="closeInfoMonitor()">×</button>
+                        </div>
+                        <div class="monitor-content" id="monitorContent">
+                            <!-- Kamera-Stream oder Bilder werden hier angezeigt -->
+                        </div>
+                    </div>
+
+                    <div class="chat-container">
+                        <div class="panel-title">💬 Kneipengespräche</div>
+                        <div class="chat-messages" id="kneipenChat"></div>
+                        <div class="input-area">
+                            <input type="file" id="kneipenImageUpload" accept="image/*" hidden onchange="handleKneipenImage(this)" />
+                            <button class="btn secondary" onclick="document.getElementById('kneipenImageUpload').click()" style="width: auto; padding: 12px 15px; margin: 0;">📷</button>
+                            <input type="text" id="kneipenInput" placeholder="Nachricht eingeben (TX: oder #4oforever für AI)..." onkeypress="if(event.key==='Enter') sendKneipenMessage()" />
+                            <button class="btn" onclick="sendKneipenMessage()" style="width: auto; padding: 12px 25px; margin: 0;">📤</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: ADMIN PANEL -->
+        <div class="tab-content" id="content-admin">
+            <div class="admin-grid">
+                <!-- ROW 1 -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">🔍 BILDANALYSE</div>
+                        <button class="btn secondary btn-small" onclick="clearImageAnalysis()">Reset</button>
+                    </div>
+                    <div class="panel-content">
+                        <div class="upload-area" onclick="document.getElementById('imageUpload').click()">
+                            📁 Bild hochladen<br><small>Klicken oder Drag&Drop</small>
+                        </div>
+                        <input type="file" id="imageUpload" accept="image/*" hidden onchange="handleImageUpload(this)">
+                        <div class="preview-area" id="imagePreview"></div>
+                        
+                        <select id="visionModelSelect" class="model-select" style="margin-bottom: 8px;">
+                            <option value="">Vision-Modell wählen...</option>
+                        </select>
+                        
+                        <input type="text" id="analysisPrompt" placeholder="Analyse-Auftrag (z.B. 'Beschreibe was du siehst')" style="margin-bottom: 8px;" />
+                        
+                        <button class="btn" onclick="analyzeImage()">🤖 Analysieren</button>
+                        <div class="monitor" id="imageMonitor">
+                            <div class="monitor-entry">Warte auf Bild...</div>
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn success" onclick="sendToTX('image')" style="flex: 1;">📤 An TX</button>
+                            <button class="btn secondary btn-small" onclick="clearImageMonitor()">Clear</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">🤖 TX CONTROL</div>
+                        <label style="font-size: 10px; color: #00d4ff; display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" id="txWebSearch" />
+                            🌐 Web Search
+                        </label>
+                    </div>
+                    <div class="panel-content" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div>
+                            <div class="chat-messages" id="txChat" style="height: 120px;"></div>
+                            <input type="text" id="txInput" placeholder="Briefing für TX..." onkeypress="if(event.key==='Enter') sendToTXDirect()" />
+                            <button class="btn" onclick="sendToTXDirect()">📤 An TX</button>
+                        </div>
+                        
+                        <div>
+                            <div style="font-size: 10px; color: #00d4ff; margin-bottom: 5px;">📝 Logbuch-Draft:</div>
+                            <textarea id="logDraft" placeholder="TX erstellt Entwurf..." style="height: 60px;"></textarea>
+                            <button class="btn success" onclick="approveDraft()">✅ Freigeben → Frontpage</button>
+                        </div>
+                        
+                        <div>
+                            <div style="font-size: 10px; color: #00d4ff; margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px solid rgba(0,212,255,0.3);">📖 Logbuch-Einträge:</div>
+                            <div id="missionEntries" style="max-height: 150px; overflow-y: auto; margin-top: 5px;">
+                                <div style="font-size: 10px; color: #66bbff; text-align: center; padding: 10px;">Keine Einträge</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">👁️ UMGEBUNG</div>
+                        <button class="btn secondary btn-small" id="envCameraBtn" onclick="toggleEnvCamera()">Kamera</button>
+                    </div>
+                    <div class="panel-content">
+                        <div class="video-container">
+                            <video id="envVideo" autoplay></video>
+                        </div>
+                        
+                        <select id="envVisionModelSelect" class="model-select" style="margin-bottom: 8px;">
+                            <option value="">Modell wählen...</option>
+                        </select>
+                        
+                        <input type="text" id="envAnalysisPrompt" placeholder="Analyse-Auftrag (z.B. 'Erkenne Objekte')" style="margin-bottom: 8px;" />
+                        
+                        <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                            <button class="btn" onclick="captureEnv()" style="flex: 1;">📸 Snapshot</button>
+                            <button class="btn" onclick="analyzeEnv()" style="flex: 1;">🤖 Analysieren</button>
+                        </div>
+                        
+                        <button class="btn secondary btn-small" onclick="toggleCameraOverlay()" id="overlayBtn" style="margin-bottom: 8px;">📺 Großansicht</button>
+                        
+                        <div class="monitor" id="envMonitor">
+                            <div class="monitor-entry" id="envStatus">Kamera bereit</div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn success" onclick="sendToTX('env')" style="flex: 1;">📤 An TX</button>
+                            <button class="btn" onclick="displayOnMonitor('video')" style="flex: 1;">📺 Auf Monitor</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 2 -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">📚 DOKUMENTE</div>
+                        <button class="btn secondary btn-small" onclick="document.getElementById('docUpload').click()">+ Doc</button>
+                    </div>
+                    <div class="panel-content">
+                        <input type="file" id="docUpload" multiple accept=".pdf,.txt,.md,.doc,.docx" hidden onchange="handleDocUpload(this)">
+                        <div class="monitor" id="docList" style="height: 80px;">
+                            <div class="monitor-entry">Keine Dokumente</div>
+                        </div>
+                        
+                        <select id="docModelSelect" class="model-select" style="margin-bottom: 8px;">
+                            <option value="">Modell wählen...</option>
+                        </select>
+                        
+                        <input type="text" id="docQuery" placeholder="Dokument abfragen..." />
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn" onclick="queryDocs()" style="flex: 1;">📖 Abfragen</button>
+                            <button class="btn secondary btn-small" onclick="clearDocs()">Clear</button>
+                        </div>
+                        <button class="btn success" onclick="sendToTX('docs')">📤 An TX</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">🌐 LOCAL AI</div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="chat-messages" id="localAIChat"></div>
+                        <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                            <select id="localModelSelect" style="flex: 1;">
+                                <option value="">Modelle werden geladen...</option>
+                            </select>
+                            <button class="btn secondary" onclick="clearLocalAI()" style="width: auto; padding: 8px 12px;">Clear</button>
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <input type="text" id="localAIInput" placeholder="Frage..." onkeypress="if(event.key==='Enter') sendLocalAI()" style="flex: 1; margin-bottom: 0;" />
+                            <button class="btn" onclick="sendLocalAI()" style="width: auto; padding: 8px 15px; margin-bottom: 0;">📤</button>
+                        </div>
+                        <div id="modelsInfo" style="margin-top: 10px; font-size: 9px; color: #66bbff; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 5px; max-height: 60px; overflow-y: auto;">
+                            Lade verfügbare Modelle...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title">🗺️ RADAR</div>
+                    </div>
+                    <div class="panel-content">
+                        <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #00d4ff; font-size: 12px; text-align: center;">
+                            [ Wohnort-Karte ]<br>
+                            <small style="color: #66bbff; font-size: 10px;">Mayen, RLP, DE</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 3: System Status Bar (einreihig über 3 Spalten) -->
+                <div class="status-bar">
+                    <div class="status-box-inline">
+                        <div class="status-label-inline">TX Agent</div>
+                        <div class="status-value-inline online">● ONLINE</div>
+                    </div>
+                    <div class="status-box-inline">
+                        <div class="status-label-inline">#4oforever</div>
+                        <div class="status-value-inline online">● ONLINE</div>
+                    </div>
+                    <div class="status-box-inline">
+                        <div class="status-label-inline">Jetson GPU</div>
+                        <div class="status-value-inline online">READY</div>
+                    </div>
+                    <div class="status-box-inline">
+                        <div class="status-label-inline">Active Users</div>
+                        <div class="status-value-inline" id="adminUserCount">1</div>
+                    </div>
+                </div>
+
+                <!-- ROW 4: Logs (3 cols) -->
+                <div class="console-section">
+                    <div class="console-title">📊 System Logs</div>
+                    <div class="console-data" id="systemLogs">
+                        > Admin Panel initialized<br>
+                        > Matrix Rain: ACTIVE<br>
+                    </div>
+                </div>
+
+                <div class="console-section">
+                    <div class="console-title">💬 Public Chat</div>
+                    <div class="console-data" id="publicLog"></div>
+                </div>
+
+                <div class="console-section">
+                    <div class="console-title">🔒 Private Messages</div>
+                    <div class="console-data" id="privateMsgList"></div>
+                </div>
+
+                <!-- Radar + Solar (col 4, rows 3-5) -->
+                <div class="right-column">
+                    <div class="radar-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">🌍 RADAR</div>
+                        </div>
+                        <div id="map" style="width: 100%; height: 100%; border-radius: 8px;"></div>
+                    </div>
+                    
+                    <div class="solar-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">☀️ SONNENSYSTEM</div>
+                        </div>
+                        <canvas id="solarCanvas" style="width: 100%; height: 100%;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

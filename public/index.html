@@ -178,6 +178,16 @@
                             <input type="text" id="kneipenInput" placeholder="Nachricht eingeben (TX: oder #4oforever für AI)..." onkeypress="if(event.key==='Enter') sendKneipenMessage()" />
                             <button class="btn" onclick="sendKneipenMessage()" style="width: auto; padding: 12px 25px; margin: 0;">📤</button>
                         </div>
+                        
+                        <!-- AI Quick Buttons -->
+                        <div style="display: flex; gap: 5px; margin-top: 8px;">
+                            <button class="btn" onclick="askAI('4o')" style="flex: 1; background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">
+                                💬 #4oforever
+                            </button>
+                            <button class="btn" onclick="askAI('tx')" style="flex: 1; background: linear-gradient(135deg, #00d4ff 0%, #0088ff 100%);">
+                                🤖 TX
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
